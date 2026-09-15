@@ -1,0 +1,158 @@
+/* 전역 웹 폰트 불러오기 (Noto Sans KR) */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap');
+
+/* 전체 배경 및 기본 설정 (글꼴 적용 및 폰트 렌더링 최적화) */
+body {
+  margin: 0;
+  background-color: #0b090e;
+  color: #ffffff;
+  font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 부드러운 스크롤 설정 및 배경 통일 */
+html {
+  scroll-behavior: smooth;
+  background-color: #0b090e;
+}
+
+/* 각 섹션의 기본 여백을 타이트하게 밀착 설정 */
+.normal-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
+}
+
+/* 스크롤 시 서서히 나타나는 페이드인 애니메이션 클래스 */
+.fade-in-section {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+  will-change: opacity, transform;
+}
+
+.fade-in-section.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* 히어로 텍스트 스타일 */
+.hero-text-section {
+  text-align: center;
+  margin-top: 15px;
+  margin-bottom: 10px;
+}
+
+.hero-text-section h2 {
+  font-size: 32px;
+  font-weight: 400;
+  letter-spacing: -0.5px;
+  margin-bottom: 8px;
+  color: #f2f2f2;
+  line-height: 1.3;
+}
+
+.hero-text-section p {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.45);
+  letter-spacing: 0.2px;
+}
+
+/* 3D 둥근 원통형 갤러리 래퍼 */
+.curved-slider-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 1200px;
+  height: 380px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto;
+  perspective: 1200px;
+  overflow: hidden;
+}
+
+.curved-slider-track {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transform-style: preserve-3d;
+}
+
+.slider-card {
+  position: absolute;
+  width: 180px;
+  height: 270px;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.9);
+  cursor: pointer;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.6s ease;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background-color: #111;
+  backface-visibility: hidden;
+}
+
+.slider-card.active {
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 25px rgba(255, 255, 255, 0.2), 0 25px 50px rgba(0, 0, 0, 0.95);
+}
+
+.slider-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 슬라이더 하단 화살표 버튼 영역 */
+.slider-controls {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 10px;
+}
+
+.slider-arrow {
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.3s, border-color 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slider-arrow:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* 부드러운 페이드인 키프레임 애니메이션 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
