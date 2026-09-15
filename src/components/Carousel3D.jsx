@@ -1,10 +1,9 @@
 import React from 'react';
-// 💡 페이지 이동을 위한 useNavigate 임포트
 import { useNavigate } from 'react-router-dom';
 
 const Carousel3D = ({ movies = [], currentIndex, setCurrentIndex }) => {
-  const navigate = useNavigate(); // 네비게이트 훅 선언
-
+  const navigate = useNavigate();
+  
   const displayMovies = movies.length > 0 ? movies : [
     { id: 0, title: "Dune 2", poster_path: "" },
     { id: 1, title: "Wicked", poster_path: "" },
@@ -21,15 +20,21 @@ const Carousel3D = ({ movies = [], currentIndex, setCurrentIndex }) => {
   const handlePrev = () => setCurrentIndex((prev) => (prev - 1 + total) % total);
 
   return (
-    // 💡 기존 디자인은 그대로 두고, 빨간 선 위치에 맞게 max-w-5xl와 mx-auto, 모서리 둥글기만 적용
-    <div className="w-full max-w-5xl mx-auto my-6 py-8 flex flex-col items-center justify-center bg-[#0b090e] rounded-3xl overflow-hidden relative shadow-xl">
+    <div className="w-full max-w-6xl mx-auto my-6 py-10 flex flex-col items-center bg-[#0b090e] rounded-3xl overflow-hidden relative shadow-xl" style={{ fontFamily: 'Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
       
+      <div className="w-full px-10 md:px-16 mb-4 flex items-center justify-start gap-4 z-20">
+        {/* 💡 text-white를 text-white/85로 변경하여 과하지 않은 은은한 투명감을 적용했습니다. */}
+        <h2 className="text-2xl md:text-[28px] font-black tracking-tight text-white/85">
+          지금 인기있는 영화
+        </h2>
+      </div>
+
       {/* 백라이트 글로는 그림자 효과 */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[220px] bg-purple-600/15 rounded-full blur-[90px] pointer-events-none" />
 
       {/* 3D 스테이지 영역 */}
       <div 
-        className="relative w-full max-w-5xl h-[340px] flex items-center justify-center z-10"
+        className="relative w-full max-w-6xl h-[340px] flex items-center justify-center z-10"
         style={{ perspective: '1400px' }}
       >
         {displayMovies.map((movie, index) => {
@@ -50,10 +55,8 @@ const Carousel3D = ({ movies = [], currentIndex, setCurrentIndex }) => {
               key={movie.id || index}
               onClick={() => {
                 if (isCenter) {
-                  // 💡 중앙(선택된) 포스터를 누르면 상세 페이지로 이동 (movie.id 또는 인덱스 활용)
                   navigate(`/movie/${movie.id || index}`);
                 } else {
-                  // 양옆의 포스터를 누르면 해당 위치로 슬라이드 이동
                   setCurrentIndex(index);
                 }
               }}
@@ -88,7 +91,7 @@ const Carousel3D = ({ movies = [], currentIndex, setCurrentIndex }) => {
       </div>
 
       {/* 네비게이션 버튼 및 인디케이터 */}
-      <div className="flex items-center gap-6 mt-4 z-20">
+      <div className="flex items-center gap-6 mt-6 z-20">
         <button 
           onClick={handlePrev} 
           className="w-8 h-8 rounded-full bg-zinc-800 text-white border border-white/15 flex items-center justify-center hover:bg-zinc-700 transition cursor-pointer font-bold shadow-md text-xs"
@@ -113,7 +116,6 @@ const Carousel3D = ({ movies = [], currentIndex, setCurrentIndex }) => {
           &rarr;
         </button>
       </div>
-
     </div>
   );
 };

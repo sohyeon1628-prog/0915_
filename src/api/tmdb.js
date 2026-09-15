@@ -1,7 +1,7 @@
 // src/api/tmdb.js
 
 export async function getLatestMovies() {
-  const TMDB_API_KEY = '7b62a6d8f7b7f0e49308f8c6ceb4cf80'; 
+    const TMDB_API_KEY = '7b62a6d8f7b7f0e49308f8c6ceb4cf80'; 
   const KOBIS_API_KEY = 'b5b0cb84dc79a8589d6d6bee3a960b00';  
   
   const d = new Date();
@@ -15,7 +15,7 @@ export async function getLatestMovies() {
     const kobisData = await kobisRes.json();
     
     if (!kobisData.boxOfficeResult || !kobisData.boxOfficeResult.dailyBoxOfficeList) {
-      console.warn("KOBIS API 실시간 연동 대기 중입니다. 잠시 후 최신 영화로 자동 업데이트됩니다.");
+      console.warn("KOBIS API 실시간 연동 대기 중입니다. 기본 추천 영화로 대체합니다.");
       return getFallbackMovies();
     }
 
@@ -35,53 +35,84 @@ export async function getLatestMovies() {
           let cast = '정보 없음';
           let overview = '등록된 줄거리가 없습니다.';
           let tmdbId = match?.id;
+          let gallery = [];
 
           if (match) {
             overview = match.overview || overview;
             
-            // TMDB 고유 ID가 있으면 감독 및 출연진(크레딧) 정보를 추가로 조회
             if (tmdbId) {
-              const creditsUrl = `https://api.themoviedb.org/3/movie/${tmdbId}/credits?api_key=${TMDB_API_KEY}&language=ko-KR`;
-              const creditsRes = await fetch(creditsUrl);
-              const creditsData = await creditsRes.json();
+              const [creditsRes, imagesRes] = await Promise.all([
+                fetch(`https://api.themoviedb.org/3/movie/${tmdbId}/credits?api_key=${TMDB_API_KEY}&language=ko-KR`),
+                fetch(`https://api.themoviedb.org/3/movie/${tmdbId}/images?api_key=${TMDB_API_KEY}`)
+              ]);
 
-              // 감독 이름 찾기
+              const creditsData = await creditsRes.json();
+              const imagesData = await imagesRes.json();
+
               const foundDirector = creditsData.crew?.find(person => person.job === 'Director');
               if (foundDirector) {
                 director = foundDirector.name;
               }
 
-              // 주요 등장인물 상위 4명 이름 추출
               if (creditsData.cast && creditsData.cast.length > 0) {
                 cast = creditsData.cast.slice(0, 4).map(actor => actor.name).join(', ');
+              }
+
+              // 💡 메인 목록에서도 갤러리를 최대 12장까지 넉넉하게 가져오도록 수정
+              if (imagesData.backdrops && imagesData.backdrops.length > 0) {
+                gallery = imagesData.backdrops.slice(0, 12).map(img => `https://image.tmdb.org/t/p/w500${img.file_path}`);
               }
             }
           }
 
+          const posterUrl = match?.poster_path ? `https://image.tmdb.org/t/p/w500${match.poster_path}` : '';
+          const backdropUrl = match?.backdrop_path ? `https://image.tmdb.org/t/p/original${match.backdrop_path}` : '';
+
           return {
-            id: tmdbId || movie.movieCd || index,
+            id: tmdbId ? tmdbId.toString() : (movie.movieCd || index.toString()),
             title: movie.movieNm,
+            year: movie.openDt ? movie.openDt.split('-')[0] : '2026',
+            age: '15+',
+            duration: '1h 50m',
+            language: 'KO',
             rank: movie.rank,
             audiAcc: movie.audiAcc,
             openDt: movie.openDt,
+            rating: match?.vote_average ? match.vote_average.toFixed(1) : '9.5',
             rate: movie.salesShare + '%',
-            poster_path: match?.poster_path || '',
-            backdrop_path: match?.backdrop_path || '',
+            poster: posterUrl,
+            poster_path: posterUrl,
+            backdrop: backdropUrl,
+            backdrop_path: backdropUrl,
+            synopsis: overview,
             overview: overview,
             director: director,
-            cast: cast
+            casts: cast,
+            cast: cast,
+            genres: ['드라마', '영화'],
+            gallery: gallery
           };
         } catch (err) {
           return {
-            id: movie.movieCd || index,
+            id: (movie.movieCd || index).toString(),
             title: movie.movieNm,
+            year: '2026',
+            age: '15+',
+            duration: '1h 50m',
+            language: 'KO',
             rank: movie.rank,
             rate: '0%',
+            poster: '',
             poster_path: '',
+            backdrop: '',
             backdrop_path: '',
+            synopsis: '등록된 줄거리가 없습니다.',
             overview: '등록된 줄거리가 없습니다.',
             director: '정보 없음',
-            cast: '정보 없음'
+            casts: '정보 없음',
+            cast: '정보 없음',
+            genres: ['영화'],
+            gallery: []
           };
         }
       })
@@ -94,57 +125,69 @@ export async function getLatestMovies() {
   }
 }
 
+// 💡 상세 페이지에서 호출하는 함수 (API 키와 갤러리 12장 제한 반영)
+export async function getMovieDetails(id) {
+    const TMDB_API_KEY = '7b62a6d8f7b7f0e49308f8c6ceb4cf80';   
+
+  try {
+    const [detailRes, creditsRes, imagesRes] = await Promise.all([
+      fetch(`https://api.themoviedb.org/3/movie/${id}?api_key=${TMDB_API_KEY}&language=ko-KR`),
+      fetch(`https://api.themoviedb.org/3/movie/${id}/credits?api_key=${TMDB_API_KEY}&language=ko-KR`),
+      fetch(`https://api.themoviedb.org/3/movie/${id}/images?api_key=${TMDB_API_KEY}`)
+    ]);
+
+    const data = await detailRes.json();
+    const credits = await creditsRes.json();
+    const images = await imagesRes.json();
+
+    if (!data || !data.id) return null;
+
+    const directorObj = credits.crew?.find(p => p.job === 'Director');
+    const castsStr = credits.cast ? credits.cast.slice(0, 4).map(c => c.name).join(', ') : '정보 없음';
+    
+    // 💡 스틸컷 갤러리를 2개씩 6줄 = 총 12장까지 가져오도록 수정
+    const galleryList = images.backdrops ? images.backdrops.slice(0, 12).map(img => `https://image.tmdb.org/t/p/w500${img.file_path}`) : [];
+
+    return {
+      id: data.id.toString(),
+      title: data.title,
+      year: data.release_date ? data.release_date.split('-')[0] : '2026',
+      age: data.adult ? '19+' : '15+',
+      duration: data.runtime ? `${Math.floor(data.runtime / 60)}h ${data.runtime % 60}m` : '1h 50m',
+      language: data.original_language ? data.original_language.toUpperCase() : 'KO',
+      rating: data.vote_average ? data.vote_average.toFixed(1) : '9.5',
+      poster: data.poster_path ? `https://image.tmdb.org/t/p/w500${data.poster_path}` : '',
+      backdrop: data.backdrop_path ? `https://image.tmdb.org/t/p/original${data.backdrop_path}` : '',
+      synopsis: data.overview || '등록된 줄거리가 없습니다.',
+      director: directorObj ? directorObj.name : '정보 없음',
+      casts: castsStr,
+      genres: data.genres ? data.genres.map(g => g.name) : ['영화'],
+      gallery: galleryList
+    };
+  } catch (error) {
+    console.error("getMovieDetails 에러:", error);
+    return null;
+  }
+}
+
 function getFallbackMovies() {
   return [
     { 
-      id: 1, 
+      id: "1", 
       title: "인사이드 아웃 2", 
+      year: "2024",
+      age: "전체관람가",
+      duration: "1h 36m",
+      language: "EN",
       openDt: "2024-06-12", 
-      poster_path: "/vpnVM9B6NMmQpWeZvzLvDESb2QY.jpg", 
-      backdrop_path: "/xg2bc3DwrViaDWj6lBoq1mSYAKM.jpg",
-      overview: "13살이 된 라일리의 머릿속 감정 컨트롤 본부. 새로운 감정들 앞에 비상등이 켜지는데...",
+      rating: "8.7",
+      poster: "https://image.tmdb.org/t/p/w500/vpnVM9B6NMmQpWeZvzLvDESb2QY.jpg", 
+      backdrop: "https://image.tmdb.org/t/p/original/xg2bc3DwrViaDWj6lBoq1mSYAKM.jpg",
+      synopsis: "13살이 된 라일리의 머릿속 감정 컨트롤 본부...",
       director: "켈시 맨",
-      cast: "에이미 포엘러, 마야 호크, 파트 마그리사"
-    },
-    { 
-      id: 2, 
-      title: "범죄도시4", 
-      openDt: "2024-04-24", 
-      poster_path: "/z1pufUDaUixWwIdXpeF54g2nS4G.jpg", 
-      backdrop_path: "/vWzSuIZmNqMvI00sUSkFb9vMcVm.jpg",
-      overview: "신종 마약 사건 3년 뒤, 괴물형사 마석도가 온라인 불법 도박 조직을 소탕하기 위해 나선다.",
-      director: "허명행",
-      cast: "마동석, 김무열, 박지환, 이동휘"
-    },
-    { 
-      id: 3, 
-      title: "파묘", 
-      openDt: "2024-02-22", 
-      poster_path: "/lWjrLW8YBWDvvnbz2rW1kUaJ70P.jpg", 
-      backdrop_path: "/xOMo8DxID7PBBtT0q1hXo8sN7uG.jpg",
-      overview: "거액의 돈을 받고 수상한 묘를 기이한 장례를 치르게 된 무당과 풍수사, 장의사에게 벌어지는 사건.",
-      director: "장재현",
-      cast: "최민식, 김고은, 유해진, 이도현"
-    },
-    { 
-      id: 4, 
-      title: "웡카", 
-      openDt: "2024-01-31", 
-      poster_path: "/qhb1qYhjpypsM13k0e2sY1K59pW.jpg", 
-      backdrop_path: "/yyFc8UA5fscIAGlIe9qse41bZ21.jpg",
-      overview: "세상에서 가장 달콤한 여정, 종잣돈도 없고 테이프도 없지만 꿈과 천재성만 있는 윌리 웡카의 이야기.",
-      director: "폴 킹",
-      cast: "티모시 샬라메, 칼라 레인, 칼 러너"
-    },
-    { 
-      id: 5, 
-      title: "듄: 파트 2", 
-      openDt: "2024-02-28", 
-      poster_path: "/8b8R8l88Qje9dn9OE8PY05Nxl1X.jpg", 
-      backdrop_path: "/xOMo8DxID7PBBtT0q1hXo8sN7uG.jpg",
-      overview: "자신의능력을 깨닫고 각성한 폴 아트레이데스가 복수를 위한 여정에서 전사의 길을 걸어간다.",
-      director: "드니 빌뇌브",
-      cast: "티모시 샬라메, 젠데이아, 레베카 퍼거슨"
+      casts: "에이미 포엘러, 마야 호크",
+      genres: ["애니메이션", "모험"],
+      gallery: []
     }
   ];
 }
