@@ -64,9 +64,9 @@ function HeroSection({ movies = [], currentMovie: fallbackMovie }) {
                 </div>
 
                 <div className="flex flex-col items-end gap-1 text-right">
-                  <div className="flex gap-1 text-amber-400 text-sm font-bold">★★★★★</div>
-                  <span className="text-xs text-zinc-300 uppercase tracking-widest font-bold">CRITIC ACCLAIM</span>
-                  <span className="text-base font-serif italic text-white font-bold">"A FASCINATING VOYAGE"</span>
+                  <div className="flex gap-1 text-amber-400 text-sm font-bold">  </div>
+                  <span className="text-xs text-zinc-300 uppercase tracking-widest font-bold">   </span>
+                  <span className="text-base font-serif italic text-white font-bold">   </span>
                 </div>
               </div>
 
